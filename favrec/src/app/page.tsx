@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Recipe } from "@/types/recipe";
+import { recipeApi } from "@/utils/api";
+import { getEnvironmentInfo } from "@/utils/environment";
 import AddRecipe from "@/components/AddRecipe";
 import RecipeList from "../components/RecipeList";
 import RecipeDetail from "../components/RecipeDetail";
@@ -11,12 +13,33 @@ export default function Home() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [activeTab, setActiveTab] = useState<"list" | "add">("list");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [usingMockData, setUsingMockData] = useState(false);
 
   // Load recipes from the API
   const loadRecipes = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
-      // For now, we'll use mock data. Replace with actual API call when deployed
+      // Check environment and database availability
+      const envInfo = await getEnvironmentInfo();
+      setUsingMockData(envInfo.usingMockData);
+      
+      if (envInfo.databaseAvailable) {
+        // Load from actual API
+        const apiRecipes = await recipeApi.getRecipes();
+        setRecipes(apiRecipes);
+        console.log(`Loaded ${apiRecipes.length} recipes from database`);
+      } else {
+        throw new Error('Database not available');
+      }
+    } catch (error) {
+      console.error("Failed to load recipes from API:", error);
+      setUsingMockData(true);
+      
+      // Fallback to mock data for development/testing
       const mockRecipes: Recipe[] = [
         {
           id: "1",
@@ -35,8 +58,7 @@ export default function Home() {
         }
       ];
       setRecipes(mockRecipes);
-    } catch (error) {
-      console.error("Failed to load recipes:", error);
+      setError("Using demo data - database not connected");
     } finally {
       setLoading(false);
     }
@@ -45,7 +67,17 @@ export default function Home() {
   // Add new recipe
   const handleAddRecipe = async (newRecipe: Omit<Recipe, "id" | "createdAt" | "updatedAt">) => {
     try {
-      // For now, we'll add to local state. Replace with actual API call when deployed
+      setError(null);
+      // Try to create via API first
+      const createdRecipe = await recipeApi.createRecipe(newRecipe);
+      setRecipes(prev => [createdRecipe, ...prev]);
+      setActiveTab("list");
+      setSuccess("Recipe added successfully!");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error("Failed to create recipe via API:", error);
+      setError("Failed to save recipe to database. Using local storage.");
+      // Fallback to local state for development
       const recipe: Recipe = {
         ...newRecipe,
         id: Date.now().toString(),
@@ -54,21 +86,31 @@ export default function Home() {
       };
       setRecipes(prev => [recipe, ...prev]);
       setActiveTab("list");
-    } catch (error) {
-      console.error("Failed to add recipe:", error);
+      setTimeout(() => setError(null), 5000);
     }
   };
 
   // Delete recipe
   const handleDeleteRecipe = async (id: string) => {
     try {
-      // For now, we'll remove from local state. Replace with actual API call when deployed
+      setError(null);
+      // Try to delete via API first
+      await recipeApi.deleteRecipe(id);
       setRecipes(prev => prev.filter(recipe => recipe.id !== id));
       if (selectedRecipe?.id === id) {
         setSelectedRecipe(null);
       }
+      setSuccess("Recipe deleted successfully!");
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
-      console.error("Failed to delete recipe:", error);
+      console.error("Failed to delete recipe via API:", error);
+      setError("Failed to delete from database. Removed locally only.");
+      // Fallback to local state for development
+      setRecipes(prev => prev.filter(recipe => recipe.id !== id));
+      if (selectedRecipe?.id === id) {
+        setSelectedRecipe(null);
+      }
+      setTimeout(() => setError(null), 5000);
     }
   };
 
@@ -88,6 +130,18 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Success/Error Notifications */}
+      {success && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+          ✅ {success}
+        </div>
+      )}
+      {error && (
+        <div className="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
+          ⚠️ {error}
+        </div>
+      )}
+      
       <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
@@ -96,6 +150,11 @@ export default function Home() {
           <p className="text-gray-600 dark:text-gray-300">
             Manage and discover your favorite recipes
           </p>
+          {usingMockData && (
+            <div className="mt-2 inline-block bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full text-sm">
+              📝 Demo Mode - Using sample data
+            </div>
+          )}
         </header>
 
         {/* Navigation Tabs */}
