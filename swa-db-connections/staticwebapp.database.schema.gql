@@ -1,0 +1,17 @@
+type Recipe @model {
+  id: ID!
+  title: String!
+  description: String
+  ingredients: [String!]!
+  instructions: [String!]!
+  cookingTime: Int
+  servings: Int
+  difficulty: String
+  category: String
+  tags: [String]
+  createdAt: String
+  updatedAt: String
+  author: String
+  rating: Float
+  imageUrl: String
+}
