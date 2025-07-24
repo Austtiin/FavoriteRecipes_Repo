@@ -91,8 +91,6 @@ The app is configured to work with Azure Cosmos DB through Static Web Apps Data 
 Set the following in your Azure Static Web App:
 
 ```
-DATABASE_CONNECTION_STRING=AccountEndpoint=https://austinadmin.documents.azure.com:443/;AccountKey=w3dgtCXz5kno3svFvqDwfRiUOk5u1D1CDDab2rBGNkObpB2rrCpXv1sX435MfJryH3enWUDDiaVfACDbii8Hjw==;
-```
 
 ## Recipe Schema
 
