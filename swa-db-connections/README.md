@@ -10,9 +10,7 @@ This folder contains the database configuration files for Azure Static Web Apps 
 ## Setup
 
 1. **Database Connection String**: Set the `DATABASE_CONNECTION_STRING` environment variable in your Azure Static Web App configuration to:
-   ```
-   AccountEndpoint=https://austinadmin.documents.azure.com:443/;AccountKey=w3dgtCXz5kno3svFvqDwfRiUOk5u1D1CDDab2rBGNkObpB2rrCpXv1sX435MfJryH3enWUDDiaVfACDbii8Hjw==;
-   ```
+   
 
 2. **Database Setup**: 
    - Create a Cosmos DB database named `FavoriteRecipesDB`
